@@ -1,5 +1,18 @@
 <!-- Fixed navbar -->
     <!-- http://twitter.github.io/bootstrap/examples/starter-template.html -->
+    <script type="text/javascript">
+  (function() {
+    var po = document.createElement('script');
+    po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://plus.google.com/js/client:plusone.js';
+    var s = document.getElementsByTagName('script')[0];
+    s.parentNode.insertBefore(po, s);
+  })();
+  </script>
+  <!-- JavaScript specific to this application that is not related to API
+     calls -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" ></script>
+
      <div class="navbar navbar-inverse navbar-fixed-top transition">
        <div class="navbar-inner">
          <div class="container">
@@ -25,16 +38,76 @@
                               
                 </ul>
               </li>
-       
+              <!--  -->
               {% else %}
                 <li><a href="{{ url_for('signup') }}">Sign up</a></li>
-                <li><a href="{{ url_for('signin') }}">Sign in</a></li>
+                <li><a href="{{ url_for('signin') }}">Sign in</a></li> 
+                <li><div style="margin-top: 6px;" id="gConnect">
+                  <button class="g-signin"
+                      data-scope="https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/drive https://www.google.com/m8/feeds/contacts/ "
+                      
+                      data-clientId="993014573268-nbvt8a18a0biqo67m85klpulccnpou3k.apps.googleusercontent.com"
+                      data-accesstype="offline"
+                      data-callback="onSignInCallback"
+                      data-theme="dark"
+                      data-cookiepolicy="single_host_origin">
+                  </button>
+                </div></li>
                 {% endif %} 
              </ul>
            </div><!-- nav-collapse -->
           </div>
          </div>
        </div>
-	
+	<script type="text/javascript">
+var helper = (function() {
+  var authResult = undefined;
+
+  
+      }
+    
+
+  return {
+    /**
+     * Hides the sign-in button and connects the server-side app after
+     * the user successfully signs in.
+     *
+     * @param {Object} authResult An Object which contains the access token and
+     *   other authentication information.
+     */
+    onSignInCallback: function(authResult) {
+      $.ajax({
+        url : "/printly"
+      });
+      /*url : "/oauth-authorized/"*/
+      /*$('#authResult').html('Auth Result:<br/>');
+      for (var field in authResult) {
+        $('#authResult').append(' ' + field + ': ' + authResult[field] + '<br/>');
+      }
+      if (authResult['access_token']) {
+        // The user is signed in
+        this.authResult = authResult;
+        helper.connectServer();
+        // After we load the Google+ API, render the profile data from Google+.
+        gapi.client.load('plus','v1',this.renderProfile);
+      } else if (authResult['error']) {
+        // There was an error, which means the user is not signed in.
+        // As an example, you can troubleshoot by writing to the console:
+        console.log('There was an error: ' + authResult['error']);
+        $('#authResult').append('Logged out');
+        $('#authOps').hide('slow');
+        $('#gConnect').show();
+      }
+      console.log('authResult', authResult);*/
+    },
+    /**
+     * Retrieves and renders the authenticated user's Google+ profile.
+     */
+    
+function onSignInCallback(authResult) {
+  helper.onSignInCallback(authResult);
+}
+</script>
+<script type="text/javascript" src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
     
             

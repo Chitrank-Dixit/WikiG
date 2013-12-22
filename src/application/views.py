@@ -252,8 +252,8 @@ def user_profile(name,uid):  #
     comments = model.EventComments.query(model.EventComments.user_id == user_key)
 
     teamcomments = model.TeamComments.query(model.TeamComments.user_id == user_key)
-
-    print user_key
+    user_key1 = ndb.Key(model.User, name)
+    print user_key, user_key1
     
     for res in user_in:
       print res.name, res.id
@@ -470,14 +470,18 @@ google = google_oauth.remote_app('google',
                           authorize_url='https://accounts.google.com/o/oauth2/auth',
                           request_token_url=None,
                           request_token_params={'scope': 'https://www.googleapis.com/auth/userinfo.email \
-                          https://www.googleapis.com/auth/userinfo.profile', 
-                                                
+                          https://www.googleapis.com/auth/userinfo.profile \
+                          https://www.googleapis.com/auth/drive \
+                          https://www.google.com/m8/feeds/contacts/ \
+                          '
+                          , 
+                            'requestvisibleactions' : 'http://schemas.google.com/AddActivity',   
                                                 'response_type': 'code'},
                           access_token_url='https://accounts.google.com/o/oauth2/token',
                           access_token_method='POST',
                           access_token_params={'grant_type': 'authorization_code'},
-                          consumer_key=GOOGLE_CLIENT_ID,
-                          consumer_secret=GOOGLE_CLIENT_SECRET)
+                          consumer_key="993014573268-nbvt8a18a0biqo67m85klpulccnpou3k.apps.googleusercontent.com", # GOOGLE_CLIENT_ID,
+                          consumer_secret="ygRBOAA92y3Tdt3puEqTL9mX") # GOOGLE_CLIENT_SECRET)
 
 @app.route('/oauth-authorized/')
 @google.authorized_handler
@@ -549,171 +553,14 @@ u'given_name': u'Chitrank', u'id': u'113942220708315173370', u'verified_email': 
 
 '''
 
+#################################################################
+# Google drive sign in REST javascript
+#
+#################################################################
 
-################################################################################
-# Google Signin
-################################################################################
-
-
-@app.route('/signin/google/')
-def signin_google():
-  google_url = users.create_login_url(
-      flask.url_for('google_authorized', next=util.get_next_url())
-    )
-  return flask.redirect(google_url)
-
-
-@app.route('/_s/callback/google/authorized/')
-def google_authorized():
-  google_user = users.get_current_user()
-  if google_user is None:
-    flask.flash(u'You denied the request to sign in.')
-    return flask.redirect(util.get_next_url())
-
-  user_db = retrieve_user_from_googleopen(google_user)
-  return signin_user_db(user_db)
-
-
-def retrieve_user_from_googleopen(google_user):
-  user_db = model.User.retrieve_one_by('federated_id', google_user.user_id())
-  if user_db:
-    if not user_db.admin and users.is_current_user_admin():
-      user_db.admin = True
-      user_db.put()
-    return user_db
-
-  return create_user_db(
-      google_user.nickname().split('@')[0].replace('.', ' ').title(),
-      google_user.nickname(),
-      google_user.email(),
-      federated_id=google_user.user_id(),
-      admin=users.is_current_user_admin(),
-    )
-
-
-
-
-
-
-################################################################################
-# Twitter Signin 
-################################################################################
-twitter_oauth = oauth.OAuth()
-
-
-twitter = twitter_oauth.remote_app(
-    'twitter',
-    base_url='https://api.twitter.com/1.1/',
-    request_token_url='https://api.twitter.com/oauth/request_token',
-    access_token_url='https://api.twitter.com/oauth/access_token',
-    authorize_url='https://api.twitter.com/oauth/authorize',
-    consumer_key='LTjPJGBUqaFXaqW7tj0gpQ',
-    consumer_secret='baTEyBGq07hKGQiXAQSSe76VYBQI92P2k8Cl5ZkDgQ',
-  )
-
-
-@app.route('/_s/callback/twitter/oauth-authorized/')
-@twitter.authorized_handler
-def twitter_oauth_authorized(resp):
-  if resp is None:
-    flask.flash(u'You denied the request to sign in.')
-    return flask.redirect(util.get_next_url())
-
-  flask.session['oauth_token'] = (
-    resp['oauth_token'],
-    resp['oauth_token_secret']
-  )
-  user_db = retrieve_user_from_twitter(resp)
-  return signin_user_db(user_db)
-
-
-@twitter.tokengetter
-def get_twitter_token():
-  return flask.session.get('oauth_token')
-
-
-@app.route('/signin/twitter/')
-def signin_twitter():
-  flask.session.pop('oauth_token', None)
-  try:
-    return twitter.authorize(
-        callback=flask.url_for('twitter_oauth_authorized',
-        next=util.get_next_url()),
-      )
-  except:
-    flask.flash(
-        'Something went terribly wrong with Twitter sign in. Please try again.',
-        category='danger',
-      )
-    return flask.redirect(flask.url_for('signin', next=util.get_next_url()))
-
-
-def retrieve_user_from_twitter(response):
-  user_db = model.User.retrieve_one_by('twitter_id', response['user_id'])
-  if user_db:
-    return user_db
-
-  return create_user_db(
-      response['screen_name'],
-      response['screen_name'],
-      twitter_id=response['user_id'],
-    )
-
-
-################################################################################
-# Facebook Signin
-################################################################################
-facebook_oauth = oauth.OAuth()
-
-facebook = facebook_oauth.remote_app(
-    'facebook',
-    base_url='https://graph.facebook.com/',
-    request_token_url=None,
-    access_token_url='/oauth/access_token',
-    authorize_url='https://www.facebook.com/dialog/oauth',
-    consumer_key='165055130361980',
-    consumer_secret='3d18b99751acc6cfd7b0277aa1b308a8',
-    request_token_params={'scope': 'email'},
-  )
-
-
-@app.route('/_s/callback/facebook/oauth-authorized/')
-@facebook.authorized_handler
-def facebook_authorized(resp):
-  if resp is None:
-    return 'Access denied: reason=%s error=%s' % (
-      flask.request.args['error_reason'],
-      flask.request.args['error_description']
-    )
-  flask.session['oauth_token'] = (resp['access_token'], '')
-  me = facebook.get('/me')
-  user_db = retrieve_user_from_facebook(me.data)
-  return signin_user_db(user_db)
-
-
-@facebook.tokengetter
-def get_facebook_oauth_token():
-  return flask.session.get('oauth_token')
-
-
-@app.route('/signin/facebook/')
-def signin_facebook():
-  return facebook.authorize(callback=flask.url_for('facebook_authorized',
-      next=util.get_next_url(),
-      _external=True),
-    )
-
-
-def retrieve_user_from_facebook(response):
-  user_db = model.User.retrieve_one_by('facebook_id', response['id'])
-  if user_db:
-    return user_db
-  return create_user_db(
-      response['name'],
-      response['username'] if 'username' in response else response['id'],
-      response['email'],
-      facebook_id=response['id'],
-    )
+@app.route('/printly')
+def priti():
+  return "Yeah it is working nicely"
 
 
 ################################################################################
