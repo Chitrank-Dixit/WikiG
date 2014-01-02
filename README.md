@@ -16,6 +16,12 @@ What Other Wiki's do not provide we do
 Downloads
 ===========
 
+Google Drive API (PyDrive) (would be better to use this):
+---------------------------------------------------------
+- https://pypi.python.org/pypi/PyDrive
+- http://pythonhosted.org/PyDrive/index.html
+- https://github.com/googledrive/PyDrive
+
 Google Datastore for local testing :
 ------------------------------------
 - https://developers.google.com/datastore/docs/downloads (install 'googledatastore' python package as well to interact with Google Cloud Datastore
